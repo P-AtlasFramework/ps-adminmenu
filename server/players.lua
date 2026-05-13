@@ -7,7 +7,7 @@ local function getVehicles(cid)
 
     for k, v in pairs(result) do
         local model = v.vehicle or v.model
-        local vehicleData = QBCore.Shared.Vehicles and QBCore.Shared.Vehicles[model]
+        local vehicleData = Atlas.Shared.Vehicles and Atlas.Shared.Vehicles[model]
 
         if vehicleData then
             vehicles[#vehicles + 1] = {
@@ -29,7 +29,7 @@ end
 
 local function getPlayers()
     local players = {}
-    local GetPlayers = QBCore.Functions.GetQBPlayers()
+    local GetPlayers = Atlas.Functions.GetQBPlayers()
 
     for k, v in pairs(GetPlayers) do
         local playerData = v.PlayerData
@@ -39,9 +39,9 @@ local function getPlayers()
             id = k,
             name = playerData.charinfo.firstname .. ' ' .. playerData.charinfo.lastname,
             cid = playerData.citizenid,
-            license = QBCore.Functions.GetIdentifier(k, 'license'),
-            discord = QBCore.Functions.GetIdentifier(k, 'discord'),
-            steam = QBCore.Functions.GetIdentifier(k, 'steam'),
+            license = Atlas.Functions.GetIdentifier(k, 'license'),
+            discord = Atlas.Functions.GetIdentifier(k, 'discord'),
+            steam = Atlas.Functions.GetIdentifier(k, 'steam'),
             job = playerData.job.label,
             grade = playerData.job.grade.level,
             dob = playerData.charinfo.birthdate,
@@ -98,22 +98,22 @@ RegisterNetEvent('ps-adminmenu:server:SetJob', function(data, selectedData)
     if not data or not CheckPerms(source, data.perms) then return end
     local src = source
     local playerId, Job, Grade = selectedData["Player"].value, selectedData["Job"].value, selectedData["Grade"].value
-    local Player = QBCore.Functions.GetPlayer(playerId)
+    local Player = Atlas.Functions.GetPlayer(playerId)
     if not Player then
-        TriggerClientEvent('QBCore:Notify', source, locale("not_online"), 'error')
+        Atlas.Functions.Notify(source, locale("not_online"), 'error')
         return
     end
     local name = Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname
-    local jobInfo = QBCore.Shared.Jobs[Job]
+    local jobInfo = Atlas.Shared.Jobs[Job]
     local grade, gradeValue = resolveGrade(jobInfo and jobInfo["grades"], Grade)
 
     if not jobInfo then
-        TriggerClientEvent('QBCore:Notify', source, "Not a valid job", 'error')
+        Atlas.Functions.Notify(source, "Not a valid job", 'error')
         return
     end
 
     if not grade then
-        TriggerClientEvent('QBCore:Notify', source, "Not a valid grade", 'error')
+        Atlas.Functions.Notify(source, "Not a valid grade", 'error')
         return
     end
 
@@ -122,7 +122,7 @@ RegisterNetEvent('ps-adminmenu:server:SetJob', function(data, selectedData)
         exports['qb-phone']:hireUser(tostring(Job), Player.PlayerData.citizenid, tonumber(Grade))
     end
 
-    QBCore.Functions.Notify(src, locale("jobset", name, Job, Grade), 'success', 5000)
+    Atlas.Functions.Notify(src, locale("jobset", name, Job, Grade), 'success', 5000)
 end)
 
 -- Set Gang
@@ -131,27 +131,27 @@ RegisterNetEvent('ps-adminmenu:server:SetGang', function(data, selectedData)
     if not data or not CheckPerms(source, data.perms) then return end
     local src = source
     local playerId, Gang, Grade = selectedData["Player"].value, selectedData["Gang"].value, selectedData["Grade"].value
-    local Player = QBCore.Functions.GetPlayer(playerId)
+    local Player = Atlas.Functions.GetPlayer(playerId)
     if not Player then
-        TriggerClientEvent('QBCore:Notify', source, locale("not_online"), 'error')
+        Atlas.Functions.Notify(source, locale("not_online"), 'error')
         return
     end
     local name = Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname
-    local GangInfo = QBCore.Shared.Gangs[Gang]
+    local GangInfo = Atlas.Shared.Gangs[Gang]
     local grade, gradeValue = resolveGrade(GangInfo and GangInfo["grades"], Grade)
 
     if not GangInfo then
-        TriggerClientEvent('QBCore:Notify', source, "Not a valid Gang", 'error')
+        Atlas.Functions.Notify(source, "Not a valid Gang", 'error')
         return
     end
 
     if not grade then
-        TriggerClientEvent('QBCore:Notify', source, "Not a valid grade", 'error')
+        Atlas.Functions.Notify(source, "Not a valid grade", 'error')
         return
     end
 
     Player.Functions.SetGang(tostring(Gang), tonumber(gradeValue) or gradeValue)
-    QBCore.Functions.Notify(src, locale("gangset", name, Gang, Grade), 'success', 5000)
+    Atlas.Functions.Notify(src, locale("gangset", name, Gang, Grade), 'success', 5000)
 end)
 
 -- Set Perms
@@ -161,17 +161,17 @@ RegisterNetEvent("ps-adminmenu:server:SetPerms", function(data, selectedData)
     local src = source
     local rank = selectedData["Permissions"].value
     local targetId = selectedData["Player"].value
-    local tPlayer = QBCore.Functions.GetPlayer(tonumber(targetId))
+    local tPlayer = Atlas.Functions.GetPlayer(tonumber(targetId))
 
     if not tPlayer then
-        QBCore.Functions.Notify(src, locale("not_online"), "error", 5000)
+        Atlas.Functions.Notify(src, locale("not_online"), "error", 5000)
         return
     end
 
     local name = tPlayer.PlayerData.charinfo.firstname .. ' ' .. tPlayer.PlayerData.charinfo.lastname
 
-    QBCore.Functions.AddPermission(tPlayer.PlayerData.source, tostring(rank))
-    QBCore.Functions.Notify(tPlayer.PlayerData.source, locale("player_perms", name, rank), 'success', 5000)
+    Atlas.Functions.AddPermission(tPlayer.PlayerData.source, tostring(rank))
+    Atlas.Functions.Notify(tPlayer.PlayerData.source, locale("player_perms", name, rank), 'success', 5000)
 end)
 
 -- Remove Stress
@@ -180,14 +180,14 @@ RegisterNetEvent("ps-adminmenu:server:RemoveStress", function(data, selectedData
     if not data or not CheckPerms(source, data.perms) then return end
     local src = source
     local targetId = selectedData['Player (Optional)'] and tonumber(selectedData['Player (Optional)'].value) or src
-    local tPlayer = QBCore.Functions.GetPlayer(tonumber(targetId))
+    local tPlayer = Atlas.Functions.GetPlayer(tonumber(targetId))
 
     if not tPlayer then
-        QBCore.Functions.Notify(src, locale("not_online"), "error", 5000)
+        Atlas.Functions.Notify(src, locale("not_online"), "error", 5000)
         return
     end
 
     TriggerClientEvent('ps-adminmenu:client:removeStress', targetId)
 
-    QBCore.Functions.Notify(tPlayer.PlayerData.source, locale("removed_stress_player"), 'success', 5000)
+    Atlas.Functions.Notify(tPlayer.PlayerData.source, locale("removed_stress_player"), 'success', 5000)
 end)

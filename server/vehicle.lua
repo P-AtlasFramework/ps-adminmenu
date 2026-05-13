@@ -3,11 +3,11 @@ RegisterNetEvent('ps-adminmenu:server:SaveCar', function(data, mods, vehicle, _,
     local src = source
     
     if not data or not CheckPerms(src, data.perms) then
-        QBCore.Functions.Notify(src, locale("no_perms"), "error", 5000)
+        Atlas.Functions.Notify(src, locale("no_perms"), "error", 5000)
         return
     end
     
-    local Player = QBCore.Functions.GetPlayer(src)
+    local Player = Atlas.Functions.GetPlayer(src)
     local ok, existing = pcall(MongoDB.Game.findOne, 'vehicles', { plate = plate })
 
     if ok and not existing then
@@ -21,9 +21,9 @@ RegisterNetEvent('ps-adminmenu:server:SaveCar', function(data, mods, vehicle, _,
             state     = 0,
             createdAt = os.time(),
         })
-        TriggerClientEvent('QBCore:Notify', src, locale("veh_owner"), 'success', 5000)
+        Atlas.Functions.Notify(src, locale("veh_owner"), 'success', 5000)
     else
-        TriggerClientEvent('QBCore:Notify', src, locale("u_veh_owner"), 'error', 3000)
+        Atlas.Functions.Notify(src, locale("u_veh_owner"), 'error', 3000)
     end
 end)
 
@@ -33,7 +33,7 @@ RegisterNetEvent("ps-adminmenu:server:givecar", function(data, selectedData)
 
     local data = CheckDataFromKey(data)
     if not data or not CheckPerms(source, data.perms) then
-        QBCore.Functions.Notify(src, locale("no_perms"), "error", 5000)
+        Atlas.Functions.Notify(src, locale("no_perms"), "error", 5000)
         return
     end
 
@@ -47,7 +47,7 @@ RegisterNetEvent("ps-adminmenu:server:givecar", function(data, selectedData)
     local tsrc = selectedData['Player'].value
     local plate = selectedData['Plate (Optional)'] and selectedData['Plate (Optional)'].value or vehicleData.plate
     local garage = selectedData['Garage (Optional)'] and selectedData['Garage (Optional)'].value or Config.DefaultGarage
-    local Player = QBCore.Functions.GetPlayer(tsrc)
+    local Player = Atlas.Functions.GetPlayer(tsrc)
 
     if plate and #plate < 1 then
         plate = vehicleData.plate
@@ -58,17 +58,17 @@ RegisterNetEvent("ps-adminmenu:server:givecar", function(data, selectedData)
     end
 
     if plate:len() > 8 then
-        QBCore.Functions.Notify(src, locale("plate_max"), "error", 5000)
+        Atlas.Functions.Notify(src, locale("plate_max"), "error", 5000)
         return
     end
 
     if not Player then
-        QBCore.Functions.Notify(src, locale("not_online"), "error", 5000)
+        Atlas.Functions.Notify(src, locale("not_online"), "error", 5000)
         return
     end
 
     if CheckAlreadyPlate(plate) then
-        QBCore.Functions.Notify(src, locale("givecar.error.plates_alreadyused", plate:upper()), "error", 5000)
+        Atlas.Functions.Notify(src, locale("givecar.error.plates_alreadyused", plate:upper()), "error", 5000)
         return
     end
 
@@ -84,10 +84,10 @@ RegisterNetEvent("ps-adminmenu:server:givecar", function(data, selectedData)
         createdAt = os.time(),
     })
 
-    QBCore.Functions.Notify(src,
-        locale("givecar.success.source", QBCore.Shared.Vehicles[vehmodel].name,
+    Atlas.Functions.Notify(src,
+        locale("givecar.success.source", Atlas.Shared.Vehicles[vehmodel].name,
             ("%s %s"):format(Player.PlayerData.charinfo.firstname, Player.PlayerData.charinfo.lastname)), "success", 5000)
-    QBCore.Functions.Notify(Player.PlayerData.source, locale("givecar.success.target", plate:upper(), garage), "success",
+    Atlas.Functions.Notify(Player.PlayerData.source, locale("givecar.success.target", plate:upper(), garage), "success",
         5000)
 end)
 
@@ -97,7 +97,7 @@ RegisterNetEvent("ps-adminmenu:server:SetVehicleState", function(data, selectedD
 
     local data = CheckDataFromKey(data)
     if not data or not CheckPerms(source, data.perms) then
-        QBCore.Functions.Notify(src, locale("no_perms"), "error", 5000)
+        Atlas.Functions.Notify(src, locale("no_perms"), "error", 5000)
         return
     end
 
@@ -105,18 +105,18 @@ RegisterNetEvent("ps-adminmenu:server:SetVehicleState", function(data, selectedD
     local state = tonumber(selectedData['State'].value)
 
     if plate:len() > 8 then
-        QBCore.Functions.Notify(src, locale("plate_max"), "error", 5000)
+        Atlas.Functions.Notify(src, locale("plate_max"), "error", 5000)
         return
     end
 
     if not CheckAlreadyPlate(plate) then
-        QBCore.Functions.Notify(src, locale("plate_doesnt_exist"), "error", 5000)
+        Atlas.Functions.Notify(src, locale("plate_doesnt_exist"), "error", 5000)
         return
     end
 
     MongoDB.Game.updateOne('vehicles', { plate = plate }, { ['$set'] = { state = state, depotprice = 0 } })
 
-    QBCore.Functions.Notify(src, locale("state_changed"), "success", 5000)
+    Atlas.Functions.Notify(src, locale("state_changed"), "success", 5000)
 end)
 
 -- Change Plate. In Atlas, vehicle inventory storage (trunk/glovebox) lives
@@ -145,13 +145,13 @@ RegisterNetEvent('ps-adminmenu:server:FixVehFor', function(data, selectedData)
     if not data or not CheckPerms(source, data.perms) then return end
     local src = source
     local playerId = selectedData['Player'].value
-    local Player = QBCore.Functions.GetPlayer(tonumber(playerId))
+    local Player = Atlas.Functions.GetPlayer(tonumber(playerId))
     if Player then
         local name = Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname
         TriggerClientEvent('iens:repaira', Player.PlayerData.source)
         TriggerClientEvent('vehiclemod:client:fixEverything', Player.PlayerData.source)
-        QBCore.Functions.Notify(src, locale("veh_fixed", name), 'success', 7500)
+        Atlas.Functions.Notify(src, locale("veh_fixed", name), 'success', 7500)
     else
-        TriggerClientEvent('QBCore:Notify', src, locale("not_online"), "error")
+        Atlas.Functions.Notify(src, locale("not_online"), "error")
     end
 end)

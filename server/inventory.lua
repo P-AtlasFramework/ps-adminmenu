@@ -5,10 +5,10 @@ RegisterNetEvent('ps-adminmenu:server:ClearInventory', function(data, selectedDa
 
     local src = source
     local player = selectedData["Player"].value
-    local Player = QBCore.Functions.GetPlayer(player)
+    local Player = Atlas.Functions.GetPlayer(player)
 
     if not Player then
-        return QBCore.Functions.Notify(source, locale("not_online"), 'error', 7500)
+        return Atlas.Functions.Notify(source, locale("not_online"), 'error', 7500)
     end
 
     if Config.Inventory == 'atlas_inv' then
@@ -19,7 +19,7 @@ RegisterNetEvent('ps-adminmenu:server:ClearInventory', function(data, selectedDa
         exports[Config.Inventory]:ClearInventory(player, nil)
     end
 
-    QBCore.Functions.Notify(src,
+    Atlas.Functions.Notify(src,
         locale("invcleared", Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname),
         'success', 7500)
 end)
@@ -31,7 +31,7 @@ RegisterNetEvent('ps-adminmenu:server:ClearInventoryOffline', function(data, sel
 
     local src = source
     local citizenId = selectedData["Citizen ID"].value
-    local Player = QBCore.Functions.GetPlayerByCitizenId(citizenId)
+    local Player = Atlas.Functions.GetPlayerByCitizenId(citizenId)
 
     if Player then
         if Config.Inventory == 'atlas_inv' then
@@ -41,7 +41,7 @@ RegisterNetEvent('ps-adminmenu:server:ClearInventoryOffline', function(data, sel
         else
             exports[Config.Inventory]:ClearInventory(Player.PlayerData.source, nil)
         end
-        QBCore.Functions.Notify(src,
+        Atlas.Functions.Notify(src,
             locale("invcleared", Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname),
             'success', 7500)
     else
@@ -52,9 +52,9 @@ RegisterNetEvent('ps-adminmenu:server:ClearInventoryOffline', function(data, sel
         local ok, doc = pcall(MongoDB.Game.findOne, 'players', { citizenid = citizenId })
         if ok and doc then
             MongoDB.Game.updateOne('players', { citizenid = citizenId }, { ['$set'] = { items = {} } })
-            QBCore.Functions.Notify(src, "Player's inventory cleared (offline)", 'success', 7500)
+            Atlas.Functions.Notify(src, "Player's inventory cleared (offline)", 'success', 7500)
         else
-            QBCore.Functions.Notify(src, locale("player_not_found"), 'error', 7500)
+            Atlas.Functions.Notify(src, locale("player_not_found"), 'error', 7500)
         end
     end
 end)
@@ -82,11 +82,11 @@ RegisterNetEvent('ps-adminmenu:server:GiveItem', function(data, selectedData)
     local target = selectedData["Player"].value
     local item = selectedData["Item"].value
     local amount = tonumber(selectedData["Amount"].value)
-    local Player = QBCore.Functions.GetPlayer(target)
+    local Player = Atlas.Functions.GetPlayer(target)
 
     if not item or not amount or amount <= 0 then return end
     if not Player then
-        return QBCore.Functions.Notify(source, locale("not_online"), 'error', 7500)
+        return Atlas.Functions.Notify(source, locale("not_online"), 'error', 7500)
     end
 
     if Config.Inventory == 'atlas_inv' then
@@ -97,7 +97,7 @@ RegisterNetEvent('ps-adminmenu:server:GiveItem', function(data, selectedData)
         Player.Functions.AddItem(item, amount)
     end
 
-    QBCore.Functions.Notify(source,
+    Atlas.Functions.Notify(source,
         locale("give_item", amount .. " " .. item,
             Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname), "success", 7500)
 end)
@@ -109,7 +109,7 @@ RegisterNetEvent('ps-adminmenu:server:GiveItemAll', function(data, selectedData)
 
     local item = selectedData["Item"].value
     local amount = tonumber(selectedData["Amount"].value)
-    local players = QBCore.Functions.GetPlayers()
+    local players = Atlas.Functions.GetPlayers()
 
     if not item or not amount or amount <= 0 then return end
 
@@ -119,12 +119,12 @@ RegisterNetEvent('ps-adminmenu:server:GiveItemAll', function(data, selectedData)
         elseif Config.Inventory == "ox_inventory" then
             exports.ox_inventory:AddItem(id, item, amount)
         elseif Config.Inventory == "qb-inventory" then
-            local Player = QBCore.Functions.GetPlayer(id)
+            local Player = Atlas.Functions.GetPlayer(id)
             if Player then
                 Player.Functions.AddItem(item, amount)
             end
         end
     end
 
-    QBCore.Functions.Notify(source, locale("give_item_all", amount .. " " .. item), "success", 7500)
+    Atlas.Functions.Notify(source, locale("give_item_all", amount .. " " .. item), "success", 7500)
 end)

@@ -1,10 +1,10 @@
 local function noPerms(source)
-    QBCore.Functions.Notify(source, "You are not Admin or God.", 'error')
+    Atlas.Functions.Notify(source, "You are not Admin or God.", 'error')
 end
 
 --- @param perms string
 function CheckPerms(source, perms)
-    local hasPerms = QBCore.Functions.HasPermission(source, perms)
+    local hasPerms = Atlas.Functions.HasPermission(source, perms)
     if not hasPerms then
         return noPerms(source)
     end
@@ -49,7 +49,7 @@ end
 ---@param plate string
 ---@return boolean
 function CheckAlreadyPlate(plate)
-    local vPlate = QBCore.Shared.Trim and QBCore.Shared.Trim(plate) or plate:gsub('^%s+', ''):gsub('%s+$', '')
+    local vPlate = Atlas.Shared.Trim and Atlas.Shared.Trim(plate) or plate:gsub('^%s+', ''):gsub('%s+$', '')
     local ok, doc = pcall(MongoDB.Game.findOne, 'vehicles', { plate = vPlate })
     return ok and doc ~= nil
 end
@@ -71,5 +71,5 @@ function CheckRoutingbucket(source, target)
     if sourceBucket == targetBucket then return end
 
     SetPlayerRoutingBucket(source, targetBucket)
-    QBCore.Functions.Notify(source, locale("bucket_set", targetBucket), 'error', 7500)
+    Atlas.Functions.Notify(source, locale("bucket_set", targetBucket), 'error', 7500)
 end

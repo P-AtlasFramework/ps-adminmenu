@@ -38,7 +38,6 @@ files {
 dependencies {
   'atlas_core',
   'atlas_mongodb',
-  'qb-core',     -- compat bridge that re-exposes atlas_core under the QBCore name
   'ox_lib',
 }
 

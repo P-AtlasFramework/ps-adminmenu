@@ -11,13 +11,13 @@ RegisterNetEvent('ps-adminmenu:client:ToggleGodmode', function(data)
     godmode = not godmode
 
     if godmode then
-        QBCore.Functions.Notify(locale("godmode", "enabled"), 'primary')
+        Atlas.Functions.Notify(locale("godmode", "enabled"), 'primary')
         while godmode do
             Wait(0)
             SetPlayerInvincible(cache.playerId, true)
         end
         SetPlayerInvincible(cache.playerId, false)
-        QBCore.Functions.Notify(locale("godmode", "disabled"), 'primary')
+        Atlas.Functions.Notify(locale("godmode", "disabled"), 'primary')
     end
 end)
 
@@ -99,10 +99,10 @@ local function showCoordsMenu()
             action = "showCoordsMenu",
             data = {
                 show = showCoords,
-                x = QBCore.Shared.Round(coords.x, 2),
-                y = QBCore.Shared.Round(coords.y, 2),
-                z = QBCore.Shared.Round(coords.z, 2),
-                heading = QBCore.Shared.Round(heading, 2)
+                x = Atlas.Shared.Round(coords.x, 2),
+                y = Atlas.Shared.Round(coords.y, 2),
+                z = Atlas.Shared.Round(coords.z, 2),
+                heading = Atlas.Shared.Round(heading, 2)
             }
         })
     end
@@ -123,9 +123,9 @@ RegisterNetEvent('ps-adminmenu:client:SetAmmo', function(data, selectedData)
 
     if weapon ~= nil then
         SetPedAmmo(cache.ped, weapon, ammo)
-        QBCore.Functions.Notify(locale("set_wepaon_ammo", tostring(ammo)), 'success')
+        Atlas.Functions.Notify(locale("set_wepaon_ammo", tostring(ammo)), 'success')
     else
-        QBCore.Functions.Notify(locale("no_weapon"), 'error')
+        Atlas.Functions.Notify(locale("no_weapon"), 'error')
     end
 end)
 
@@ -138,9 +138,9 @@ RegisterNetEvent('ps-adminmenu:client:SetAmmoCommand', function()
     local ammo = 999
     if weapon ~= nil then
         SetPedAmmo(cache.ped, weapon, ammo)
-        QBCore.Functions.Notify(locale("set_wepaon_ammo", tostring(ammo)), 'success')
+        Atlas.Functions.Notify(locale("set_wepaon_ammo", tostring(ammo)), 'success')
     else
-        QBCore.Functions.Notify(locale("no_weapon"), 'error')
+        Atlas.Functions.Notify(locale("no_weapon"), 'error')
     end
 end)
 
@@ -154,7 +154,7 @@ RegisterNetEvent('ps-adminmenu:client:ToggleDev', function(dataKey)
     TriggerEvent('ps-adminmenu:client:ToggleCoords', dataKey)  -- toggle Coords
     TriggerEvent('ps-adminmenu:client:ToggleGodmode', dataKey) -- Godmode
 
-    QBCore.Functions.Notify(locale("toggle_dev"), 'success')
+    Atlas.Functions.Notify(locale("toggle_dev"), 'success')
 end)
 
 -- Key Bindings

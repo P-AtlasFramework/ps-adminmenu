@@ -1,10 +1,10 @@
 local PedList = require "data.ped"
 
--- Returns a list of vehicles from QBCore.Shared.Vehicles
+-- Returns a list of vehicles from Atlas.Shared.Vehicles
 local function GetVehicles()
     local vehicles = {}
 
-    for _, v in pairs(QBCore.Shared.Vehicles) do
+    for _, v in pairs(Atlas.Shared.Vehicles) do
         vehicles[#vehicles + 1] = { label = v.name, value = v.model }
     end
 
@@ -27,7 +27,7 @@ local function GetItems()
     end
 
     if Config.Inventory == "qb-inventory" then
-        local ItemsData = QBCore.Shared.Items
+        local ItemsData = Atlas.Shared.Items
 
         for name, v in pairs(ItemsData) do
             items[#items + 1] = {
@@ -40,11 +40,11 @@ local function GetItems()
     return items
 end
 
--- Returns a list of jobs from QBCore.Shared.Jobs
+-- Returns a list of jobs from Atlas.Shared.Jobs
 local function GetJobs()
     local jobs = {}
 
-    for name, v in pairs(QBCore.Shared.Jobs) do
+    for name, v in pairs(Atlas.Shared.Jobs) do
         local gradeDataList = {}
 
         for grade, gradeData in pairs(v.grades) do
@@ -57,11 +57,11 @@ local function GetJobs()
     return jobs
 end
 
--- Returns a list of gangs from QBCore.Shared.Gangs
+-- Returns a list of gangs from Atlas.Shared.Gangs
 local function GetGangs()
     local gangs = {}
 
-    for name, v in pairs(QBCore.Shared.Gangs) do
+    for name, v in pairs(Atlas.Shared.Gangs) do
         local gradeDataList = {}
 
         for grade, gradeData in pairs(v.grades) do
@@ -74,11 +74,11 @@ local function GetGangs()
     return gangs
 end
 
--- Returns a list of locations from QBCore.Shared.Loactions
+-- Returns a list of locations from Atlas.Shared.Loactions
 local function GetLocations()
     local LocationList
-    if GetResourceState('qb-core') == 'started' then
-        LocationList = QBCore.Shared.Locations
+    if GetResourceState('atlas_core') == 'started' then
+        LocationList = Atlas.Shared.Locations
     else
         LocationList = require "data.locations"
     end

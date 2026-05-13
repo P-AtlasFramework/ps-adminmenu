@@ -1,7 +1,9 @@
 Config = Config or {}
 
-Config.Core = "qb-core"        -- "qb-core" or "qbx_core"
-Config.Fuel = "ps-fuel"        -- "ps-fuel", "LegacyFuel", "ox_fuel"
+-- atlas_core is the only supported framework on this fork. The original
+-- ps-adminmenu shipped Config.Core with "qb-core"/"qbx_core" branches;
+-- both code paths have been folded into atlas_core via exports['atlas_core'].
+Config.Fuel = "atlas_fuel"     -- "atlas_fuel" (Atlas), "ps-fuel", "LegacyFuel", "ox_fuel"
 Config.ResourcePerms = 'admin' -- permission to control resource(start stop restart)
 Config.ShowCommandsPerms = 'admin' -- permission to show all commands
 Config.RenewedPhone = false    -- if you use qb-phone from renewed. (multijob)
@@ -255,12 +257,15 @@ Config.Actions = {
         perms = "mod",
     },
 
-    ["toggle_duty"] = {
-        label = "Toggle Duty",
-        type = "server",
-        event = "QBCore:ToggleDuty",
-        perms = "mod",
-    },
+    -- ["toggle_duty"] disabled - Atlas has no QBCore:ToggleDuty equivalent
+    -- (atlas_mgmt owns duty status via its own org/job event surface).
+    -- Re-enable once a server-side duty-toggle event lands in atlas_mgmt.
+    -- ["toggle_duty"] = {
+    --     label = "Toggle Duty",
+    --     type = "server",
+    --     event = "atlas_mgmt:server:ToggleDuty",
+    --     perms = "mod",
+    -- },
 
     ["toggle_laser"] = {
         label = "Toggle Laser",

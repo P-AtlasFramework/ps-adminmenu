@@ -1,11 +1,10 @@
-local coreResource = Config.Core == "qbx_core" and "qb-core" or Config.Core
-QBCore = exports[coreResource]:GetCoreObject()
+Atlas = exports['atlas_core']:GetCoreObject()
 PlayerData = {}
 
 -- Functions
 local function setupMenu()
 	Wait(500)
-	PlayerData = QBCore.Functions.GetPlayerData()
+	PlayerData = Atlas.Functions.GetPlayerData()
 	local resources = lib.callback.await('ps-adminmenu:callback:GetResources', false)
 	local commands = lib.callback.await('ps-adminmenu:callback:GetCommands', false)
 	GetData()
@@ -21,7 +20,7 @@ local function setupMenu()
 end
 
 -- Event Handlers
-AddEventHandler("QBCore:Client:OnPlayerLoaded", function()
+AddEventHandler("atlas_core:Client:OnPlayerLoaded", function()
 	setupMenu()
 end)
 

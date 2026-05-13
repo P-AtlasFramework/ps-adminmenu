@@ -8,12 +8,12 @@ RegisterNetEvent('ps-adminmenu:server:BanPlayer', function(data, selectedData)
     local time = tonumber(selectedData["Duration"] and selectedData["Duration"].value)
 
     if not player then
-        QBCore.Functions.Notify(source, locale("not_online"), 'error', 7500)
+        Atlas.Functions.Notify(source, locale("not_online"), 'error', 7500)
         return
     end
 
     if not time then
-        QBCore.Functions.Notify(source, locale("empty_input"), 'error', 7500)
+        Atlas.Functions.Notify(source, locale("empty_input"), 'error', 7500)
         return
     end
 
@@ -30,9 +30,9 @@ RegisterNetEvent('ps-adminmenu:server:BanPlayer', function(data, selectedData)
     -- atlas_mongodb/server/index.js). Fields match the existing schema.
     local ok, err = pcall(MongoDB.Auth.insertOne, 'bans', {
         name      = GetPlayerName(player),
-        license   = QBCore.Functions.GetIdentifier(player, 'license'),
-        discord   = QBCore.Functions.GetIdentifier(player, 'discord'),
-        ip        = QBCore.Functions.GetIdentifier(player, 'ip'),
+        license   = Atlas.Functions.GetIdentifier(player, 'license'),
+        discord   = Atlas.Functions.GetIdentifier(player, 'discord'),
+        ip        = Atlas.Functions.GetIdentifier(player, 'ip'),
         reason    = reason,
         expire    = expire,
         bannedby  = GetPlayerName(source),
@@ -41,7 +41,7 @@ RegisterNetEvent('ps-adminmenu:server:BanPlayer', function(data, selectedData)
 
     if not ok then
         print(('^1[ps-adminmenu] Ban insert failed: %s^7'):format(tostring(err)))
-        QBCore.Functions.Notify(source, "Ban failed: Mongo insert error (check atlas_mongodb).", 'error', 7500)
+        Atlas.Functions.Notify(source, "Ban failed: Mongo insert error (check atlas_mongodb).", 'error', 7500)
         return
     end
 
@@ -60,7 +60,7 @@ RegisterNetEvent('ps-adminmenu:server:BanPlayer', function(data, selectedData)
     end
 
     if source and GetPlayerName(source) then
-        QBCore.Functions.Notify(source, locale("playerbanned", player, banTime, reason), 'success', 7500)
+        Atlas.Functions.Notify(source, locale("playerbanned", player, banTime, reason), 'success', 7500)
     end
 end)
 
@@ -69,14 +69,14 @@ RegisterNetEvent('ps-adminmenu:server:WarnPlayer', function(data, selectedData)
     local data = CheckDataFromKey(data)
     if not data or not CheckPerms(source, data.perms) then return end
     local targetId = selectedData["Player"].value
-    local target = QBCore.Functions.GetPlayer(targetId)
+    local target = Atlas.Functions.GetPlayer(targetId)
     local reason = selectedData["Reason"].value
-    local sender = QBCore.Functions.GetPlayer(source)
+    local sender = Atlas.Functions.GetPlayer(source)
     local warnId = 'WARN-' .. math.random(1111, 9999)
     if target ~= nil then
-        QBCore.Functions.Notify(target.PlayerData.source,
+        Atlas.Functions.Notify(target.PlayerData.source,
             locale("warned") .. ", for: " .. locale("reason") .. ": " .. reason, 'inform', 10000)
-        QBCore.Functions.Notify(source,
+        Atlas.Functions.Notify(source,
             locale("warngiven") .. GetPlayerName(target.PlayerData.source) .. ", for: " .. reason)
         local ok, err = pcall(MongoDB.Game.insertOne, 'ps_adminmenu_warns', {
             senderIdentifier = sender.PlayerData.license,
@@ -89,7 +89,7 @@ RegisterNetEvent('ps-adminmenu:server:WarnPlayer', function(data, selectedData)
             print(('^1[ps-adminmenu] Warn insert failed: %s^7'):format(tostring(err)))
         end
     else
-        TriggerClientEvent('QBCore:Notify', source, locale("not_online"), 'error')
+        Atlas.Functions.Notify(source, locale("not_online"), 'error')
     end
 end)
 
@@ -97,11 +97,11 @@ RegisterNetEvent('ps-adminmenu:server:KickPlayer', function(data, selectedData)
     local data = CheckDataFromKey(data)
     if not data or not CheckPerms(source, data.perms) then return end
     local src = source
-    local target = QBCore.Functions.GetPlayer(selectedData["Player"].value)
+    local target = Atlas.Functions.GetPlayer(selectedData["Player"].value)
     local reason = selectedData["Reason"].value
 
     if not target then
-        QBCore.Functions.Notify(src, locale("not_online"), 'error', 7500)
+        Atlas.Functions.Notify(src, locale("not_online"), 'error', 7500)
         return
     end
 
@@ -140,7 +140,7 @@ RegisterNetEvent('ps-adminmenu:server:ReviveRadius', function(data)
     local src = source
     local ped = GetPlayerPed(src)
     local pos = GetEntityCoords(ped)
-    local players = QBCore.Functions.GetPlayers()
+    local players = Atlas.Functions.GetPlayers()
 
     for k, v in pairs(players) do
         local target = GetPlayerPed(v)
@@ -168,11 +168,11 @@ RegisterNetEvent('ps-adminmenu:server:SetBucket', function(data, selectedData)
     local currentBucket = GetPlayerRoutingBucket(player)
 
     if bucket == currentBucket then
-        return QBCore.Functions.Notify(src, locale("target_same_bucket", player), 'error', 7500)
+        return Atlas.Functions.Notify(src, locale("target_same_bucket", player), 'error', 7500)
     end
 
     SetPlayerRoutingBucket(player, bucket)
-    QBCore.Functions.Notify(src, locale("bucket_set_for_target", player, bucket), 'success', 7500)
+    Atlas.Functions.Notify(src, locale("bucket_set_for_target", player, bucket), 'success', 7500)
 end)
 
 -- Get RoutingBucket
@@ -184,7 +184,7 @@ RegisterNetEvent('ps-adminmenu:server:GetBucket', function(data, selectedData)
     local player = selectedData["Player"].value
     local currentBucket = GetPlayerRoutingBucket(player)
 
-    QBCore.Functions.Notify(src, locale("bucket_get", player, currentBucket), 'success', 7500)
+    Atlas.Functions.Notify(src, locale("bucket_get", player, currentBucket), 'success', 7500)
 end)
 
 -- Give Money
@@ -195,14 +195,14 @@ RegisterNetEvent('ps-adminmenu:server:GiveMoney', function(data, selectedData)
     local src = source
     local target, amount, moneyType = selectedData["Player"].value, selectedData["Amount"].value,
         selectedData["Type"].value
-    local Player = QBCore.Functions.GetPlayer(tonumber(target))
+    local Player = Atlas.Functions.GetPlayer(tonumber(target))
 
     if Player == nil then
-        return QBCore.Functions.Notify(src, locale("not_online"), 'error', 7500)
+        return Atlas.Functions.Notify(src, locale("not_online"), 'error', 7500)
     end
 
     Player.Functions.AddMoney(tostring(moneyType), tonumber(amount))
-    QBCore.Functions.Notify(src,
+    Atlas.Functions.Notify(src,
         locale((moneyType == "crypto" and "give_money_crypto" or "give_money"), tonumber(amount),
             Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname), "success")
 end)
@@ -214,12 +214,12 @@ RegisterNetEvent('ps-adminmenu:server:GiveMoneyAll', function(data, selectedData
 
     local src = source
     local amount, moneyType = selectedData["Amount"].value, selectedData["Type"].value
-    local players = QBCore.Functions.GetPlayers()
+    local players = Atlas.Functions.GetPlayers()
 
     for _, v in pairs(players) do
-        local Player = QBCore.Functions.GetPlayer(tonumber(v))
+        local Player = Atlas.Functions.GetPlayer(tonumber(v))
         Player.Functions.AddMoney(tostring(moneyType), tonumber(amount))
-        QBCore.Functions.Notify(src,
+        Atlas.Functions.Notify(src,
             locale((moneyType == "crypto" and "give_money_all_crypto" or "give_money_all"), tonumber(amount)), "success")
     end
 end)
@@ -232,19 +232,19 @@ RegisterNetEvent('ps-adminmenu:server:TakeMoney', function(data, selectedData)
     local src = source
     local target, amount, moneyType = selectedData["Player"].value, selectedData["Amount"].value,
         selectedData["Type"].value
-    local Player = QBCore.Functions.GetPlayer(tonumber(target))
+    local Player = Atlas.Functions.GetPlayer(tonumber(target))
 
     if Player == nil then
-        return QBCore.Functions.Notify(src, locale("not_online"), 'error', 7500)
+        return Atlas.Functions.Notify(src, locale("not_online"), 'error', 7500)
     end
 
     if Player.PlayerData.money[moneyType] >= tonumber(amount) then
         Player.Functions.RemoveMoney(moneyType, tonumber(amount), "state-fees")
     else
-        QBCore.Functions.Notify(src, locale("not_enough_money"), "primary")
+        Atlas.Functions.Notify(src, locale("not_enough_money"), "primary")
     end
 
-    QBCore.Functions.Notify(src,
+    Atlas.Functions.Notify(src,
         locale((moneyType == "crypto" and "take_money_crypto" or "take_money"), tonumber(amount) .. "$",
             Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname), "success")
 end)
@@ -259,13 +259,13 @@ RegisterNetEvent('ps-adminmenu:server:ToggleBlackout', function(data)
     local src = source
 
     if Blackout then
-        TriggerClientEvent('QBCore:Notify', src, locale("blackout", "enabled"), 'primary')
+        Atlas.Functions.Notify(src, locale("blackout", "enabled"), 'primary')
         while Blackout do
             Wait(0)
             exports["qb-weathersync"]:setBlackout(true)
         end
         exports["qb-weathersync"]:setBlackout(false)
-        TriggerClientEvent('QBCore:Notify', src, locale("blackout", "disabled"), 'primary')
+        Atlas.Functions.Notify(src, locale("blackout", "disabled"), 'primary')
     end
 end)
 
@@ -277,7 +277,7 @@ RegisterNetEvent('ps-adminmenu:server:CuffPlayer', function(data, selectedData)
     local target = selectedData["Player"].value
 
     TriggerClientEvent('ps-adminmenu:client:ToggleCuffs', target)
-    QBCore.Functions.Notify(source, locale("toggled_cuffs"), 'success')
+    Atlas.Functions.Notify(source, locale("toggled_cuffs"), 'success')
 end)
 
 -- Give Clothing Menu
@@ -289,7 +289,7 @@ RegisterNetEvent('ps-adminmenu:server:ClothingMenu', function(data, selectedData
     local target = tonumber(selectedData["Player"].value)
 
     if target == nil then
-        return QBCore.Functions.Notify(src, locale("not_online"), 'error', 7500)
+        return Atlas.Functions.Notify(src, locale("not_online"), 'error', 7500)
     end
 
     if target == src then
@@ -304,16 +304,16 @@ RegisterNetEvent("ps-adminmenu:server:setPed", function(data, selectedData)
     local src = source
     local data = CheckDataFromKey(data)
     if not data or not CheckPerms(source, data.perms) then
-        QBCore.Functions.Notify(src, locale("no_perms"), "error", 5000)
+        Atlas.Functions.Notify(src, locale("no_perms"), "error", 5000)
         return
     end
 
     local ped = selectedData["Ped Models"].label
     local tsrc = selectedData["Player"].value
-    local Player = QBCore.Functions.GetPlayer(tsrc)
+    local Player = Atlas.Functions.GetPlayer(tsrc)
 
     if not Player then
-        QBCore.Functions.Notify(locale("not_online"), "error", 5000)
+        Atlas.Functions.Notify(locale("not_online"), "error", 5000)
         return
     end
 
