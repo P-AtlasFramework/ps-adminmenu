@@ -1,22 +1,25 @@
 local function getVehicles(cid)
-    local result = MySQL.query.await(
-    'SELECT vehicle, plate, fuel, engine, body FROM player_vehicles WHERE citizenid = ?', { cid })
+    -- Atlas stores vehicles in the Mongo `vehicles` collection (owned by
+    -- atlas_dealership / atlas_parking). Filter by citizenid.
+    local ok, result = pcall(MongoDB.Game.findMany, 'vehicles', { citizenid = cid })
+    if not ok or type(result) ~= 'table' then return {} end
     local vehicles = {}
 
     for k, v in pairs(result) do
-        local vehicleData = QBCore.Shared.Vehicles[v.vehicle]
+        local model = v.vehicle or v.model
+        local vehicleData = QBCore.Shared.Vehicles and QBCore.Shared.Vehicles[model]
 
         if vehicleData then
             vehicles[#vehicles + 1] = {
-                id = k,
-                cid = cid,
+                id    = k,
+                cid   = cid,
                 label = vehicleData.name,
                 brand = vehicleData.brand,
                 model = vehicleData.model,
                 plate = v.plate,
-                fuel = v.fuel,
+                fuel  = v.fuel,
                 engine = v.engine,
-                body = v.body
+                body  = v.body,
             }
         end
     end

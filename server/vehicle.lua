@@ -8,20 +8,19 @@ RegisterNetEvent('ps-adminmenu:server:SaveCar', function(data, mods, vehicle, _,
     end
     
     local Player = QBCore.Functions.GetPlayer(src)
-    local result = MySQL.query.await('SELECT plate FROM player_vehicles WHERE plate = ?', { plate })
+    local ok, existing = pcall(MongoDB.Game.findOne, 'vehicles', { plate = plate })
 
-    if result[1] == nil then
-        MySQL.insert(
-        'INSERT INTO player_vehicles (license, citizenid, vehicle, hash, mods, plate, state) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            {
-                Player.PlayerData.license,
-                Player.PlayerData.citizenid,
-                vehicle.model,
-                vehicle.hash,
-                json.encode(mods),
-                plate,
-                0
-            })
+    if ok and not existing then
+        MongoDB.Game.insertOne('vehicles', {
+            license   = Player.PlayerData.license,
+            citizenid = Player.PlayerData.citizenid,
+            vehicle   = vehicle.model,
+            hash      = vehicle.hash,
+            mods      = mods,
+            plate     = plate,
+            state     = 0,
+            createdAt = os.time(),
+        })
         TriggerClientEvent('QBCore:Notify', src, locale("veh_owner"), 'success', 5000)
     else
         TriggerClientEvent('QBCore:Notify', src, locale("u_veh_owner"), 'error', 3000)
@@ -73,18 +72,17 @@ RegisterNetEvent("ps-adminmenu:server:givecar", function(data, selectedData)
         return
     end
 
-    MySQL.insert(
-    'INSERT INTO player_vehicles (license, citizenid, vehicle, hash, mods, plate, garage, state) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        {
-            Player.PlayerData.license,
-            Player.PlayerData.citizenid,
-            vehmodel,
-            joaat(vehmodel),
-            json.encode(vehicleData),
-            plate,
-            garage,
-            1
-        })
+    MongoDB.Game.insertOne('vehicles', {
+        license   = Player.PlayerData.license,
+        citizenid = Player.PlayerData.citizenid,
+        vehicle   = vehmodel,
+        hash      = joaat(vehmodel),
+        mods      = vehicleData,
+        plate     = plate,
+        garage    = garage,
+        state     = 1,
+        createdAt = os.time(),
+    })
 
     QBCore.Functions.Notify(src,
         locale("givecar.success.source", QBCore.Shared.Vehicles[vehmodel].name,
@@ -116,17 +114,16 @@ RegisterNetEvent("ps-adminmenu:server:SetVehicleState", function(data, selectedD
         return
     end
 
-    MySQL.update('UPDATE player_vehicles SET state = ?, depotprice = ? WHERE plate = ?', { state, 0, plate })
+    MongoDB.Game.updateOne('vehicles', { plate = plate }, { ['$set'] = { state = state, depotprice = 0 } })
 
     QBCore.Functions.Notify(src, locale("state_changed"), "success", 5000)
 end)
 
--- Change Plate
-local function tableExists(tableName)
-    local result = MySQL.query.await('SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?', { tableName })
-    return result and result[1] ~= nil
-end
-
+-- Change Plate. In Atlas, vehicle inventory storage (trunk/glovebox) lives
+-- on the vehicle document itself or in atlas_inv's stash subsystem, not
+-- separate trunkitems/gloveboxitems tables - so we only update the vehicle
+-- plate and let downstream resources (atlas_inv, atlas_parking) pick up
+-- the change. ox_inventory branch retained for compat.
 RegisterNetEvent('ps-adminmenu:server:ChangePlate', function(newPlate, currentPlate)
     local newPlate = newPlate:upper()
 
@@ -134,19 +131,12 @@ RegisterNetEvent('ps-adminmenu:server:ChangePlate', function(newPlate, currentPl
         exports.ox_inventory:UpdateVehicle(currentPlate, newPlate)
     end
 
-    MySQL.Sync.execute('UPDATE player_vehicles SET plate = ? WHERE plate = ?', { newPlate, currentPlate })
-    if tableExists('trunkitems') then
-        MySQL.Sync.execute('UPDATE trunkitems SET plate = ? WHERE plate = ?', { newPlate, currentPlate })
-    end
-    if tableExists('gloveboxitems') then
-        MySQL.Sync.execute('UPDATE gloveboxitems SET plate = ? WHERE plate = ?', { newPlate, currentPlate })
-    end
+    MongoDB.Game.updateOne('vehicles', { plate = currentPlate }, { ['$set'] = { plate = newPlate } })
 end)
 
 lib.callback.register('ps-adminmenu:server:GetVehicleByPlate', function(source, plate)
-    local result = MySQL.query.await('SELECT vehicle FROM player_vehicles WHERE plate = ?', { plate })
-    local veh = result[1] and result[1].vehicle or {}
-    return veh
+    local ok, doc = pcall(MongoDB.Game.findOne, 'vehicles', { plate = plate })
+    return (ok and doc and (doc.vehicle or doc.model)) or {}
 end)
 
 -- Fix Vehicle for player

@@ -49,10 +49,9 @@ end
 ---@param plate string
 ---@return boolean
 function CheckAlreadyPlate(plate)
-    local vPlate = QBCore.Shared.Trim(plate)
-    local result = MySQL.single.await("SELECT plate FROM player_vehicles WHERE plate = ?", { vPlate })
-    if result and result.plate then return true end
-    return false
+    local vPlate = QBCore.Shared.Trim and QBCore.Shared.Trim(plate) or plate:gsub('^%s+', ''):gsub('%s+$', '')
+    local ok, doc = pcall(MongoDB.Game.findOne, 'vehicles', { plate = vPlate })
+    return ok and doc ~= nil
 end
 
 lib.callback.register('ps-adminmenu:callback:CheckPerms', function(source, perms)

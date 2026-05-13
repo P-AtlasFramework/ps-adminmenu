@@ -708,7 +708,9 @@ Config.OtherActions = {
     }
 }
 
-if GetResourceState('ox_inventory') == 'started' then
+if GetResourceState('atlas_inv') == 'started' then
+    Config.Inventory = 'atlas_inv'
+elseif GetResourceState('ox_inventory') == 'started' then
     Config.Inventory = 'ox_inventory'
 elseif GetResourceState('ps-inventory') == 'started' then
     Config.Inventory = 'ps-inventory'

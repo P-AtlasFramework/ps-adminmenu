@@ -26,21 +26,22 @@ RegisterNetEvent('ps-adminmenu:server:BanPlayer', function(data, selectedData)
 
     local timeTable = os.date('*t', banTime)
 
-    local insertId = MySQL.insert.await(
-        'INSERT INTO bans (name, license, discord, ip, reason, expire, bannedby) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        {
-            GetPlayerName(player),
-            QBCore.Functions.GetIdentifier(player, 'license'),
-            QBCore.Functions.GetIdentifier(player, 'discord'),
-            QBCore.Functions.GetIdentifier(player, 'ip'),
-            reason,
-            expire,
-            GetPlayerName(source)
-        }
-    )
+    -- bans live in the atlas_auth `bans` collection (predeclared in
+    -- atlas_mongodb/server/index.js). Fields match the existing schema.
+    local ok, err = pcall(MongoDB.Auth.insertOne, 'bans', {
+        name      = GetPlayerName(player),
+        license   = QBCore.Functions.GetIdentifier(player, 'license'),
+        discord   = QBCore.Functions.GetIdentifier(player, 'discord'),
+        ip        = QBCore.Functions.GetIdentifier(player, 'ip'),
+        reason    = reason,
+        expire    = expire,
+        bannedby  = GetPlayerName(source),
+        createdAt = os.time(),
+    })
 
-    if not insertId then
-        QBCore.Functions.Notify(source, "Ban failed: database insert error (check oxmysql and bans table).", 'error', 7500)
+    if not ok then
+        print(('^1[ps-adminmenu] Ban insert failed: %s^7'):format(tostring(err)))
+        QBCore.Functions.Notify(source, "Ban failed: Mongo insert error (check atlas_mongodb).", 'error', 7500)
         return
     end
 
@@ -77,13 +78,16 @@ RegisterNetEvent('ps-adminmenu:server:WarnPlayer', function(data, selectedData)
             locale("warned") .. ", for: " .. locale("reason") .. ": " .. reason, 'inform', 10000)
         QBCore.Functions.Notify(source,
             locale("warngiven") .. GetPlayerName(target.PlayerData.source) .. ", for: " .. reason)
-        MySQL.insert('INSERT INTO player_warns (senderIdentifier, targetIdentifier, reason, warnId) VALUES (?, ?, ?, ?)',
-            {
-                sender.PlayerData.license,
-                target.PlayerData.license,
-                reason,
-                warnId
-            })
+        local ok, err = pcall(MongoDB.Game.insertOne, 'ps_adminmenu_warns', {
+            senderIdentifier = sender.PlayerData.license,
+            targetIdentifier = target.PlayerData.license,
+            reason           = reason,
+            warnId           = warnId,
+            createdAt        = os.time(),
+        })
+        if not ok then
+            print(('^1[ps-adminmenu] Warn insert failed: %s^7'):format(tostring(err)))
+        end
     else
         TriggerClientEvent('QBCore:Notify', source, locale("not_online"), 'error')
     end

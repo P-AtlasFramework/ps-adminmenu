@@ -11,7 +11,9 @@ RegisterNetEvent('ps-adminmenu:server:ClearInventory', function(data, selectedDa
         return QBCore.Functions.Notify(source, locale("not_online"), 'error', 7500)
     end
 
-    if Config.Inventory == 'ox_inventory' then
+    if Config.Inventory == 'atlas_inv' then
+        exports['atlas_inv']:ClearInventory(player)
+    elseif Config.Inventory == 'ox_inventory' then
         exports.ox_inventory:ClearInventory(player)
     else
         exports[Config.Inventory]:ClearInventory(player, nil)
@@ -32,7 +34,9 @@ RegisterNetEvent('ps-adminmenu:server:ClearInventoryOffline', function(data, sel
     local Player = QBCore.Functions.GetPlayerByCitizenId(citizenId)
 
     if Player then
-        if Config.Inventory == 'ox_inventory' then
+        if Config.Inventory == 'atlas_inv' then
+            exports['atlas_inv']:ClearInventory(Player.PlayerData.source)
+        elseif Config.Inventory == 'ox_inventory' then
             exports.ox_inventory:ClearInventory(Player.PlayerData.source)
         else
             exports[Config.Inventory]:ClearInventory(Player.PlayerData.source, nil)
@@ -41,16 +45,17 @@ RegisterNetEvent('ps-adminmenu:server:ClearInventoryOffline', function(data, sel
             locale("invcleared", Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname),
             'success', 7500)
     else
-        MySQL.Async.fetchAll("SELECT * FROM players WHERE citizenid = @citizenid", { ['@citizenid'] = citizenId },
-            function(result)
-                if result and result[1] then
-                    MySQL.Async.execute("UPDATE players SET inventory = '{}' WHERE citizenid = @citizenid",
-                        { ['@citizenid'] = citizenId })
-                    QBCore.Functions.Notify(src, "Player's inventory cleared", 'success', 7500)
-                else
-                    QBCore.Functions.Notify(src, locale("player_not_found"), 'error', 7500)
-                end
-            end)
+        -- Offline path: read the players collection from Mongo, zero out
+        -- the inventory field. atlas_core stores player docs in the `players`
+        -- collection of atlas_game; the inventory subdoc is owned by
+        -- atlas_inv. Clearing here wipes both server-side and on next login.
+        local ok, doc = pcall(MongoDB.Game.findOne, 'players', { citizenid = citizenId })
+        if ok and doc then
+            MongoDB.Game.updateOne('players', { citizenid = citizenId }, { ['$set'] = { items = {} } })
+            QBCore.Functions.Notify(src, "Player's inventory cleared (offline)", 'success', 7500)
+        else
+            QBCore.Functions.Notify(src, locale("player_not_found"), 'error', 7500)
+        end
     end
 end)
 
@@ -84,7 +89,9 @@ RegisterNetEvent('ps-adminmenu:server:GiveItem', function(data, selectedData)
         return QBCore.Functions.Notify(source, locale("not_online"), 'error', 7500)
     end
 
-    if Config.Inventory == "ox_inventory" then
+    if Config.Inventory == 'atlas_inv' then
+        exports['atlas_inv']:AddItem(target, item, amount, nil, nil, 'admin_give')
+    elseif Config.Inventory == "ox_inventory" then
         exports.ox_inventory:AddItem(target, item, amount)
     elseif Config.Inventory == "qb-inventory" then
         Player.Functions.AddItem(item, amount)
@@ -107,7 +114,9 @@ RegisterNetEvent('ps-adminmenu:server:GiveItemAll', function(data, selectedData)
     if not item or not amount or amount <= 0 then return end
 
     for _, id in pairs(players) do
-        if Config.Inventory == "ox_inventory" then
+        if Config.Inventory == 'atlas_inv' then
+            exports['atlas_inv']:AddItem(id, item, amount, nil, nil, 'admin_give')
+        elseif Config.Inventory == "ox_inventory" then
             exports.ox_inventory:AddItem(id, item, amount)
         elseif Config.Inventory == "qb-inventory" then
             local Player = QBCore.Functions.GetPlayer(id)
