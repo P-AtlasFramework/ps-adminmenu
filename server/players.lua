@@ -29,9 +29,10 @@ end
 
 local function getPlayers()
     local players = {}
-    local GetPlayers = Atlas.Functions.GetQBPlayers()
 
-    for k, v in pairs(GetPlayers) do
+    -- Iterate Atlas.Players directly. It's the authoritative source-keyed
+    -- map of online player objects; pairs() yields (src, Player) pairs.
+    for k, v in pairs(Atlas.Players) do
         local playerData = v.PlayerData
         local vehicles = getVehicles(playerData.citizenid)
 
