@@ -27,30 +27,59 @@ local function getVehicles(cid)
     return vehicles
 end
 
+-- Lookup helpers that survive a missing/restructured PlayerData field.
+-- Phase 13 split moved some lookups around (.org / .job / .crime) and
+-- banking balances now live in the atlas_banking accounts collection,
+-- not PlayerData.money.bank — those used to throw and abort the whole
+-- callback, returning an empty player list in the UI.
+local function safeJobLabel(pd)
+    local job = pd.job
+    if type(job) ~= 'table' then return 'unemployed' end
+    return job.label or job.name or 'unemployed'
+end
+
+local function safeJobGrade(pd)
+    local job = pd.job
+    if type(job) ~= 'table' or type(job.grade) ~= 'table' then return 0 end
+    return tonumber(job.grade.level) or tonumber(job.grade.id) or 0
+end
+
+local function safeMoney(src, pd, kind)
+    -- Prefer atlas_banking (authoritative since the Phase 13 split).
+    local ok, val = pcall(function() return exports['atlas_banking']:PlayerGetMoney(src, kind) end)
+    if ok and type(val) == 'number' then return val end
+    -- Fallback to PlayerData.money for legacy reads.
+    local m = pd.money or {}
+    return tonumber(m[kind]) or 0
+end
+
 local function getPlayers()
     local players = {}
 
     -- Iterate Atlas.Players directly. It's the authoritative source-keyed
     -- map of online player objects; pairs() yields (src, Player) pairs.
     for k, v in pairs(Atlas.Players) do
-        local playerData = v.PlayerData
-        local vehicles = getVehicles(playerData.citizenid)
+        local playerData = v and v.PlayerData
+        if playerData and playerData.charinfo then
+            local vehicles = getVehicles(playerData.citizenid)
+            local charinfo = playerData.charinfo
 
-        players[#players + 1] = {
-            id = k,
-            name = playerData.charinfo.firstname .. ' ' .. playerData.charinfo.lastname,
-            cid = playerData.citizenid,
-            license = Atlas.Functions.GetIdentifier(k, 'license'),
-            discord = Atlas.Functions.GetIdentifier(k, 'discord'),
-            steam = Atlas.Functions.GetIdentifier(k, 'steam'),
-            job = playerData.job.label,
-            grade = playerData.job.grade.level,
-            dob = playerData.charinfo.birthdate,
-            cash = playerData.money.cash,
-            bank = playerData.money.bank,
-            phone = playerData.charinfo.phone,
-            vehicles = vehicles
-        }
+            players[#players + 1] = {
+                id       = k,
+                name     = ((charinfo.firstname or '?') .. ' ' .. (charinfo.lastname or '?')),
+                cid      = playerData.citizenid,
+                license  = Atlas.Functions.GetIdentifier(k, 'license'),
+                discord  = Atlas.Functions.GetIdentifier(k, 'discord'),
+                steam    = Atlas.Functions.GetIdentifier(k, 'steam'),
+                job      = safeJobLabel(playerData),
+                grade    = safeJobGrade(playerData),
+                dob      = charinfo.birthdate,
+                cash     = safeMoney(k, playerData, 'cash'),
+                bank     = safeMoney(k, playerData, 'bank'),
+                phone    = charinfo.phone,
+                vehicles = vehicles,
+            }
+        end
     end
 
     table.sort(players, function(a, b) return a.id < b.id end)

@@ -24,6 +24,36 @@ Config.Actions = {
         perms = "mod",
     },
 
+    -- Coordinate-copy actions. The keys must match what the existing
+    -- `ps-adminmenu:client:CopyCoords` handler expects (it switches on
+    -- the first arg). Server's ValidateClientAction fires the client
+    -- event with (key, selectedData), so a key of "vector2" arrives at
+    -- the handler as the type arg verbatim.
+    ["vector2"] = {
+        label = "Copy Vector2",
+        type  = "client",
+        event = "ps-adminmenu:client:CopyCoords",
+        perms = "mod",
+    },
+    ["vector3"] = {
+        label = "Copy Vector3",
+        type  = "client",
+        event = "ps-adminmenu:client:CopyCoords",
+        perms = "mod",
+    },
+    ["vector4"] = {
+        label = "Copy Vector4",
+        type  = "client",
+        event = "ps-adminmenu:client:CopyCoords",
+        perms = "mod",
+    },
+    ["heading"] = {
+        label = "Copy Heading",
+        type  = "client",
+        event = "ps-adminmenu:client:CopyCoords",
+        perms = "mod",
+    },
+
     ["ban_player"] = {
         label = "Ban Player",
         perms = "mod",
