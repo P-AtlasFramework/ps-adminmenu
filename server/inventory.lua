@@ -75,20 +75,19 @@ RegisterNetEvent('ps-adminmenu:server:ClearInventoryOffline', function(data, sel
     end
 end)
 
--- Open someone else's pockets. atlas_inv's `OpenInventory` opens the
--- given inventory NAME for the calling source — for player pockets
--- that's `content-<cid>`. Falls back to ox_inventory for non-atlas
--- deployments.
+-- Open someone else's full inventory. atlas_inv exposes
+-- OpenPlayerInventory(adminSource, targetSource) which loads every
+-- player-inventory slot (pockets, hotbar, clothing, weapons) and
+-- pushes them down with both client:loadInventory + client:openInventory
+-- so the NUI renders the whole target the same way the player would
+-- see their own inventory.
 RegisterNetEvent('ps-adminmenu:server:OpenInv', function(targetSrc)
     local src = source
     targetSrc = tonumber(targetSrc)
     if not targetSrc then return end
 
     if Config.Inventory == 'atlas_inv' then
-        local Target = Atlas.Functions.GetPlayer(targetSrc)
-        if not Target then return end
-        local invName = 'content-' .. Target.PlayerData.citizenid
-        pcall(function() exports['atlas_inv']:OpenInventory(src, invName, 'content') end)
+        pcall(function() exports['atlas_inv']:OpenPlayerInventory(src, targetSrc) end)
     else
         exports.ox_inventory:forceOpenInventory(src, 'player', targetSrc)
     end
