@@ -1,8 +1,13 @@
--- Open Inventory
+-- Open Inventory — atlas_inv exposes OpenInventoryById on the server,
+-- which OpenInventory's a content-<cid> grid for the target. The legacy
+-- ox / qb fallbacks are kept for non-atlas servers.
 RegisterNetEvent('ps-adminmenu:client:openInventory', function(data, selectedData)
-    local player = selectedData["Player"].value
+    local player = tonumber(selectedData["Player"].value)
+    if not player then return end
 
-    if Config.Inventory == 'ox_inventory' then
+    if Config.Inventory == 'atlas_inv' then
+        TriggerServerEvent("ps-adminmenu:server:OpenInv", player)
+    elseif Config.Inventory == 'ox_inventory' then
         TriggerServerEvent("ps-adminmenu:server:OpenInv", player)
     else
         TriggerServerEvent("inventory:server:OpenInventory", "otherplayer", player)
@@ -31,4 +36,10 @@ RegisterNetEvent('ps-adminmenu:client:openTrunk', function(data, selectedData)
         TriggerServerEvent("inventory:server:OpenInventory", "trunk", tostring(vehiclePlate))
         TriggerEvent("inventory:client:SetCurrentStash", tostring(vehiclePlate))
     end
+end)
+
+-- Open the appearance/clothing editor — fired by the admin clothing
+-- action from the server side.
+RegisterNetEvent('ps-adminmenu:client:openClothing', function()
+    pcall(function() exports['atlas_appearance']:openAppearance() end)
 end)

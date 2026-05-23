@@ -108,27 +108,35 @@ RegisterNetEvent('ps-adminmenu:server:KickPlayer', function(data, selectedData)
     DropPlayer(target.PlayerData.source, locale("kicked") .. '\n' .. locale("reason") .. reason)
 end)
 
+-- Local helper: full heal (revive in place + hunger/thirst to 100).
+-- atlas_ambulance owns the death/revive flow via
+-- `atlas_ambulance:client:reviveInPlace`; hunger/thirst live on
+-- PlayerData.metadata and are set through atlas_core SetMetaData.
+local function fullHeal(targetSrc)
+    local Player = Atlas.Functions.GetPlayer(targetSrc)
+    if not Player then return false end
+    TriggerClientEvent('atlas_ambulance:client:reviveInPlace', targetSrc)
+    pcall(function() Player.Functions.SetMetaData('hunger', 100) end)
+    pcall(function() Player.Functions.SetMetaData('thirst', 100) end)
+    pcall(function() Player.Functions.SetMetaData('stress', 0) end)
+    return true
+end
+
 -- Revive Player
 RegisterNetEvent('ps-adminmenu:server:Revive', function(data, selectedData)
     local data = CheckDataFromKey(data)
     if not data or not CheckPerms(source, data.perms) then return end
-    local player = selectedData["Player"].value
-    if GetResourceState('qbx_medical') == 'started' then
-        exports.qbx_medical:Revive(player)
-    else
-        TriggerClientEvent('hospital:client:Revive', player)
-    end
+    local player = tonumber(selectedData["Player"].value)
+    if not player then return end
+    fullHeal(player)
 end)
 
 -- Revive All
 RegisterNetEvent('ps-adminmenu:server:ReviveAll', function(data)
     local data = CheckDataFromKey(data)
     if not data or not CheckPerms(source, data.perms) then return end
-
-    if GetResourceState('qbx_medical') == 'started' then
-        exports.qbx_medical:Revive(-1)
-    else
-        TriggerClientEvent('hospital:client:Revive', -1)
+    for _, id in ipairs(Atlas.Functions.GetPlayers() or {}) do
+        fullHeal(id)
     end
 end)
 
@@ -148,11 +156,7 @@ RegisterNetEvent('ps-adminmenu:server:ReviveRadius', function(data)
         local dist = #(pos - targetPos)
 
         if dist < 15.0 then
-            if GetResourceState('qbx_medical') == 'started' then
-                exports.qbx_medical:Revive(v)
-            else
-                TriggerClientEvent('hospital:client:Revive', v)
-            end
+            fullHeal(v)
         end
     end
 end)
@@ -296,7 +300,9 @@ RegisterNetEvent('ps-adminmenu:server:ClothingMenu', function(data, selectedData
         TriggerClientEvent("ps-adminmenu:client:CloseUI", src)
     end
 
-    TriggerClientEvent('qb-clothing:client:openMenu', target)
+    -- atlas_appearance is the Atlas-native clothing system; tell the
+    -- target's client to open the full appearance editor.
+    TriggerClientEvent('ps-adminmenu:client:openClothing', target)
 end)
 
 -- Set Ped

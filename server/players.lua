@@ -151,9 +151,16 @@ RegisterNetEvent('ps-adminmenu:server:SetJob', function(data, selectedData)
         return
     end
 
-    Player.Functions.SetJob(tostring(Job), tonumber(gradeValue) or gradeValue)
-    if Config.RenewedPhone then
-        exports['qb-phone']:hireUser(tostring(Job), Player.PlayerData.citizenid, tonumber(Grade))
+    -- Route through atlas_mgmt OrgStore so the per-player Mongo doc,
+    -- the cache, and PlayerData.org/job all stay in sync — promotions
+    -- via Player.Functions.SetJob alone don't always write back to the
+    -- canonical OrgStore record under Phase 13.
+    local routed = false
+    pcall(function()
+        routed = exports['atlas_mgmt']:SetPlayerOrg(playerId, tostring(Job), tonumber(gradeValue) or gradeValue) == true
+    end)
+    if not routed then
+        Player.Functions.SetJob(tostring(Job), tonumber(gradeValue) or gradeValue)
     end
 
     Atlas.Functions.Notify(src, locale("jobset", name, Job, Grade), 'success', 5000)
@@ -184,7 +191,14 @@ RegisterNetEvent('ps-adminmenu:server:SetGang', function(data, selectedData)
         return
     end
 
-    Player.Functions.SetGang(tostring(Gang), tonumber(gradeValue) or gradeValue)
+    local routed = false
+    pcall(function()
+        routed = exports['atlas_mgmt']:SetPlayerOrg(playerId, tostring(Gang), tonumber(gradeValue) or gradeValue) == true
+    end)
+    if not routed then
+        Player.Functions.SetGang(tostring(Gang), tonumber(gradeValue) or gradeValue)
+    end
+
     Atlas.Functions.Notify(src, locale("gangset", name, Gang, Grade), 'success', 5000)
 end)
 

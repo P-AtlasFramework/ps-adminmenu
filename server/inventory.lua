@@ -1,23 +1,20 @@
 -- Clear Inventory
 RegisterNetEvent('ps-adminmenu:server:ClearInventory', function(data, selectedData)
-    local data = CheckDataFromKey(data)
-    if not data or not CheckPerms(data.perms) then return end
-
     local src = source
-    local player = selectedData["Player"].value
+    data = CheckDataFromKey(data)
+    -- CheckPerms requires the SOURCE — the original call passed only
+    -- perms and effectively asked "is `data.perms` (a string) allowed
+    -- to do `nil`?" — always rejected, so Clear Inventory never fired.
+    if not data or not CheckPerms(src, data.perms) then return end
+
+    local player = tonumber(selectedData["Player"].value)
     local Player = Atlas.Functions.GetPlayer(player)
 
     if not Player then
-        return Atlas.Functions.Notify(source, locale("not_online"), 'error', 7500)
+        return Atlas.Functions.Notify(src, locale("not_online"), 'error', 7500)
     end
 
-    if Config.Inventory == 'atlas_inv' then
-        exports['atlas_inv']:ClearInventory(player)
-    elseif Config.Inventory == 'ox_inventory' then
-        exports.ox_inventory:ClearInventory(player)
-    else
-        exports[Config.Inventory]:ClearInventory(player, nil)
-    end
+    pcall(function() exports['atlas_inv']:ClearInventory(player) end)
 
     Atlas.Functions.Notify(src,
         locale("invcleared", Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname),
@@ -34,24 +31,19 @@ RegisterNetEvent('ps-adminmenu:server:ClearInventoryOffline', function(data, sel
     local Player = Atlas.Functions.GetPlayerByCitizenId(citizenId)
 
     if Player then
-        if Config.Inventory == 'atlas_inv' then
-            exports['atlas_inv']:ClearInventory(Player.PlayerData.source)
-        elseif Config.Inventory == 'ox_inventory' then
-            exports.ox_inventory:ClearInventory(Player.PlayerData.source)
-        else
-            exports[Config.Inventory]:ClearInventory(Player.PlayerData.source, nil)
-        end
+        pcall(function() exports['atlas_inv']:ClearInventory(Player.PlayerData.source) end)
         Atlas.Functions.Notify(src,
             locale("invcleared", Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname),
             'success', 7500)
     else
-        -- Offline path: read the players collection from Mongo, zero out
-        -- the inventory field. atlas_core stores player docs in the `players`
-        -- collection of atlas_game; the inventory subdoc is owned by
-        -- atlas_inv. Clearing here wipes both server-side and on next login.
-        local ok, doc = pcall(MongoDB.Game.findOne, 'players', { citizenid = citizenId })
-        if ok and doc then
-            MongoDB.Game.updateOne('players', { citizenid = citizenId }, { ['$set'] = { items = {} } })
+        -- Offline path: atlas_inv stores inventories in the `inventories`
+        -- collection keyed by `inventoryName` like `content-<cid>` per
+        -- the slot ladder in Config.PlayerInventories. Delete all rows
+        -- ending in this cid; player char doc lives in `characters` (no
+        -- inventory field there post-Phase-13).
+        local docs = MongoDB.Game.findMany('characters', { citizenid = citizenId })
+        if docs and docs[1] then
+            MongoDB.Game.deleteMany('inventories', { name = { ['$regex'] = '-' .. citizenId .. '$' } })
             Atlas.Functions.Notify(src, "Player's inventory cleared (offline)", 'success', 7500)
         else
             Atlas.Functions.Notify(src, locale("player_not_found"), 'error', 7500)
@@ -59,9 +51,23 @@ RegisterNetEvent('ps-adminmenu:server:ClearInventoryOffline', function(data, sel
     end
 end)
 
--- Open Inv [ox side]
-RegisterNetEvent('ps-adminmenu:server:OpenInv', function(data)
-    exports.ox_inventory:forceOpenInventory(source, 'player', data)
+-- Open someone else's pockets. atlas_inv's `OpenInventory` opens the
+-- given inventory NAME for the calling source — for player pockets
+-- that's `content-<cid>`. Falls back to ox_inventory for non-atlas
+-- deployments.
+RegisterNetEvent('ps-adminmenu:server:OpenInv', function(targetSrc)
+    local src = source
+    targetSrc = tonumber(targetSrc)
+    if not targetSrc then return end
+
+    if Config.Inventory == 'atlas_inv' then
+        local Target = Atlas.Functions.GetPlayer(targetSrc)
+        if not Target then return end
+        local invName = 'content-' .. Target.PlayerData.citizenid
+        pcall(function() exports['atlas_inv']:OpenInventory(src, invName, 'content') end)
+    else
+        exports.ox_inventory:forceOpenInventory(src, 'player', targetSrc)
+    end
 end)
 
 -- Open Stash [ox side]
