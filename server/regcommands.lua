@@ -14,7 +14,10 @@ local function isCommandBlacklisted(commandName)
     return false
 end
 
-lib.callback.register('ps-adminmenu:callback:GetCommands', function()
+lib.callback.register('ps-adminmenu:callback:GetCommands', function(source)
+    -- ox_lib passes source as the first arg. Without capturing it the
+    -- global `source` is nil and CheckPerms always rejects, so the
+    -- Commands tab stayed empty for everyone (including admins).
     if not CheckPerms(source, Config.ShowCommandsPerms) then return {} end
 
     local allCommands = GetRegisteredCommands()

@@ -18,7 +18,7 @@ RegisterNetEvent('ps-adminmenu:server:sendMessageServer', function(message, citi
 end)
 
 
-lib.callback.register('ps-adminmenu:callback:GetMessages', function()
+lib.callback.register('ps-adminmenu:callback:GetMessages', function(source)
     if not CheckPerms(source, 'mod') then return {} end
     return messages
 end)

@@ -56,26 +56,30 @@ end
 local function getPlayers()
     local players = {}
 
-    -- Iterate Atlas.Players directly. It's the authoritative source-keyed
-    -- map of online player objects; pairs() yields (src, Player) pairs.
-    for k, v in pairs(Atlas.Players) do
-        local playerData = v and v.PlayerData
+    -- IMPORTANT: Atlas.Players from exports['atlas_core']:GetCoreObject()
+    -- is a FROZEN SNAPSHOT taken at this resource's boot time (empty),
+    -- not the live state. Iterating it returns nothing. The live source
+    -- list goes through Atlas.Functions.GetPlayers() which routes back
+    -- into atlas_core via the export RPC each call.
+    for _, src in ipairs(Atlas.Functions.GetPlayers() or {}) do
+        local Player = Atlas.Functions.GetPlayer(src)
+        local playerData = Player and Player.PlayerData
         if playerData and playerData.charinfo then
             local vehicles = getVehicles(playerData.citizenid)
             local charinfo = playerData.charinfo
 
             players[#players + 1] = {
-                id       = k,
+                id       = src,
                 name     = ((charinfo.firstname or '?') .. ' ' .. (charinfo.lastname or '?')),
                 cid      = playerData.citizenid,
-                license  = Atlas.Functions.GetIdentifier(k, 'license'),
-                discord  = Atlas.Functions.GetIdentifier(k, 'discord'),
-                steam    = Atlas.Functions.GetIdentifier(k, 'steam'),
+                license  = Atlas.Functions.GetIdentifier(src, 'license'),
+                discord  = Atlas.Functions.GetIdentifier(src, 'discord'),
+                steam    = Atlas.Functions.GetIdentifier(src, 'steam'),
                 job      = safeJobLabel(playerData),
                 grade    = safeJobGrade(playerData),
                 dob      = charinfo.birthdate,
-                cash     = safeMoney(k, playerData, 'cash'),
-                bank     = safeMoney(k, playerData, 'bank'),
+                cash     = safeMoney(src, playerData, 'cash'),
+                bank     = safeMoney(src, playerData, 'bank'),
                 phone    = charinfo.phone,
                 vehicles = vehicles,
             }
