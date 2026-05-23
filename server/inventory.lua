@@ -1,3 +1,27 @@
+-- Return every defined inventory item, normalized to { label, value }
+-- for the admin menu's Item dropdown. atlas_inv loads items.json into
+-- AtlasInv.Items via a shared script — only visible inside atlas_inv,
+-- so we route through its server export.
+lib.callback.register('ps-adminmenu:callback:GetItems', function(source)
+    if not CheckPerms(source, 'mod') then return {} end
+
+    local items = {}
+    if Config.Inventory == 'atlas_inv' then
+        local ok, data = pcall(function() return exports['atlas_inv']:GetSharedItems() end)
+        if ok and type(data) == 'table' then
+            for name, def in pairs(data) do
+                items[#items + 1] = {
+                    label = (def and def.label) or name,
+                    value = name,
+                }
+            end
+        end
+    end
+
+    table.sort(items, function(a, b) return (a.label or ''):lower() < (b.label or ''):lower() end)
+    return items
+end)
+
 -- Clear Inventory
 RegisterNetEvent('ps-adminmenu:server:ClearInventory', function(data, selectedData)
     local src = source

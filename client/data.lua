@@ -11,24 +11,29 @@ local function GetVehicles()
     return vehicles
 end
 
--- Returns a list of items from ox_inventory or qb-inventory
+-- Returns a list of items.
+--   atlas_inv → server callback (items.json lives behind a shared
+--               script inside atlas_inv; not directly readable here).
+--   ox_inventory → :Items() export.
+--   qb-inventory → Atlas.Shared.Items (legacy fallback).
 local function GetItems()
     local items = {}
 
-    if Config.Inventory == "ox_inventory" then
-        local ItemsData = exports.ox_inventory:Items()
+    if Config.Inventory == "atlas_inv" then
+        local res = lib.callback.await('ps-adminmenu:callback:GetItems', false)
+        if type(res) == "table" then items = res end
 
+    elseif Config.Inventory == "ox_inventory" then
+        local ItemsData = exports.ox_inventory:Items()
         for _, v in pairs(ItemsData) do
             items[#items + 1] = {
                 label = v.label or v.name,
                 value = v.name
             }
         end
-    end
 
-    if Config.Inventory == "qb-inventory" then
+    elseif Config.Inventory == "qb-inventory" then
         local ItemsData = Atlas.Shared.Items
-
         for name, v in pairs(ItemsData) do
             items[#items + 1] = {
                 label = v.label,
